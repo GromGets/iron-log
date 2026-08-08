@@ -36,7 +36,12 @@
       "Bash(curl -s http://localhost:8081/status)",
       "Bash(curl -s \"http://localhost:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false\" -o /tmp/bundle_check.js -w \"HTTP %{http_code}\\\\n\" --max-time 120)",
       "Bash(node generate2.js)",
-      "Bash(curl -s \"http://localhost:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false\" -o /tmp/bundle_check2.js -w \"HTTP %{http_code}\\\\n\" --max-time 120)"
+      "Bash(curl -s \"http://localhost:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false\" -o /tmp/bundle_check2.js -w \"HTTP %{http_code}\\\\n\" --max-time 120)",
+      "Bash(eas build:cancel --help)",
+      "Bash(eas build:cancel 1e733c26-a1e5-425f-9822-7cd5fb11a942 --non-interactive)",
+      "Bash(curl -s \"http://localhost:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false\" -o /tmp/bundle_check3.js -w \"HTTP %{http_code}\\\\n\" --max-time 120)",
+      "Bash(eas build:cancel 22e881a1-c897-47eb-8e30-f070e6f073dd --non-interactive)",
+      "Bash(curl -s \"http://localhost:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false\" -o /tmp/bundle_check4.js -w \"HTTP %{http_code}\\\\n\" --max-time 120)"
     ]
   }
 }
