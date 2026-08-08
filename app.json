@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#121316",
+        "backgroundColor": "#111B32",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
       "package": "com.ironlog.app"
