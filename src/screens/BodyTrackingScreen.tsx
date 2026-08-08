@@ -1,16 +1,23 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Screen, Card, Eyebrow, Button, EmptyState } from '@/components/UI';
 import { colors, space, type, radius } from '@/theme/theme';
 import {
   addBodyWeight,
   listBodyWeights,
+  deleteBodyWeight,
   addBodyMeasurement,
   listBodyMeasurements,
+  deleteBodyMeasurement,
 } from '@/db/repository';
 import { BodyWeightEntry, BodyMeasurementEntry, MeasurementType } from '@/types';
 import { LineChart } from '@/components/LineChart';
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 const MEASUREMENT_TYPES: MeasurementType[] = [
   'Waist',
@@ -66,6 +73,34 @@ export default function BodyTrackingScreen() {
     if (measureTypeInput === measurementType) load();
   };
 
+  const handleDeleteWeight = (entry: BodyWeightEntry) => {
+    Alert.alert('Delete entry', `Remove the ${entry.weightKg}kg entry from ${formatDate(entry.date)}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteBodyWeight(entry.id);
+          setWeights((prev) => prev.filter((w) => w.id !== entry.id));
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteMeasurement = (entry: BodyMeasurementEntry) => {
+    Alert.alert('Delete entry', `Remove the ${entry.valueCm}cm entry from ${formatDate(entry.date)}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteBodyMeasurement(entry.id);
+          setMeasurements((prev) => prev.filter((m) => m.id !== entry.id));
+        },
+      },
+    ]);
+  };
+
   const weightChartData = [...weights].reverse().map((w, i) => ({ x: i, y: w.weightKg }));
   const measurementChartData = [...measurements].reverse().map((m, i) => ({ x: i, y: m.valueCm }));
 
@@ -82,9 +117,24 @@ export default function BodyTrackingScreen() {
           {weights.length === 0 ? (
             <EmptyState title="No entries yet" body="Log your body weight to see your trend over time." />
           ) : (
-            <View style={{ alignItems: 'center', marginTop: space.sm }}>
-              <LineChart points={weightChartData} width={300} height={140} formatValue={(v) => `${v}kg`} />
-            </View>
+            <>
+              <View style={{ alignItems: 'center', marginTop: space.sm }}>
+                <LineChart points={weightChartData} width={300} height={140} formatValue={(v) => `${v}kg`} />
+              </View>
+              <View style={{ marginTop: space.md, gap: space.xs }}>
+                {weights.map((w) => (
+                  <View key={w.id} style={styles.entryRow}>
+                    <Text style={type.bodySecondary}>{formatDate(w.date)}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                      <Text style={type.statMedium}>{w.weightKg}kg</Text>
+                      <Pressable onPress={() => handleDeleteWeight(w)} hitSlop={8}>
+                        <Text style={{ color: colors.danger, fontSize: 15 }}>✕</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </>
           )}
         </Card>
 
@@ -117,9 +167,24 @@ export default function BodyTrackingScreen() {
           {measurements.length === 0 ? (
             <EmptyState title="No entries yet" body={`Log your ${measurementType.toLowerCase()} measurement to see it change over time.`} />
           ) : (
-            <View style={{ alignItems: 'center', marginTop: space.sm }}>
-              <LineChart points={measurementChartData} width={300} height={140} formatValue={(v) => `${v}cm`} />
-            </View>
+            <>
+              <View style={{ alignItems: 'center', marginTop: space.sm }}>
+                <LineChart points={measurementChartData} width={300} height={140} formatValue={(v) => `${v}cm`} />
+              </View>
+              <View style={{ marginTop: space.md, gap: space.xs }}>
+                {measurements.map((m) => (
+                  <View key={m.id} style={styles.entryRow}>
+                    <Text style={type.bodySecondary}>{formatDate(m.date)}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                      <Text style={type.statMedium}>{m.valueCm}cm</Text>
+                      <Pressable onPress={() => handleDeleteMeasurement(m)} hitSlop={8}>
+                        <Text style={{ color: colors.danger, fontSize: 15 }}>✕</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </>
           )}
         </Card>
       </ScrollView>
@@ -209,6 +274,12 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: '700',
     fontSize: 13,
+  },
+  entryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: space.xs,
   },
   typeTabs: {
     flexDirection: 'row',
