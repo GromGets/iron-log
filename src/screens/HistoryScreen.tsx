@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen, Card, EmptyState } from '@/components/UI';
 import { space, type } from '@/theme/theme';
@@ -12,6 +13,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HistoryScreen() {
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 
   useFocusEffect(
@@ -22,7 +24,7 @@ export default function HistoryScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: space.xxl * 2 + insets.bottom }]}>
         {sessions.length === 0 && (
           <EmptyState title="No sessions yet" body="Finished workouts will show up here." />
         )}

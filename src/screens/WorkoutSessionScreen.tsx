@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen, Button, EmptyState } from '@/components/UI';
 import { colors, space, type, radius } from '@/theme/theme';
@@ -20,6 +21,7 @@ type Route_ = RouteProp<RootStackParamList, 'WorkoutSession'>;
 export default function WorkoutSessionScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route_>();
+  const insets = useSafeAreaInsets();
   const { routineId, routineName } = route.params ?? {};
 
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export default function WorkoutSessionScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: space.xxl * 2 + insets.bottom }]}>
         <Text style={type.title}>{routineName ?? 'Freestyle Workout'}</Text>
         <Text style={[type.bodySecondary, { marginTop: 2, marginBottom: space.lg }]}>
           {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -129,7 +131,7 @@ export default function WorkoutSessionScreen() {
               </Pressable>
             ))}
           </ScrollView>
-          <View style={{ padding: space.lg }}>
+          <View style={{ padding: space.lg, paddingBottom: space.lg + insets.bottom }}>
             <Button label="Close" variant="secondary" onPress={() => setPickerVisible(false)} />
           </View>
         </Screen>

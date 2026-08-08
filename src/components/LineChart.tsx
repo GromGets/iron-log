@@ -17,11 +17,15 @@ export function LineChart({
   height = 160,
   width = 320,
   formatValue,
+  onPointPress,
+  selectedIndex,
 }: {
   points: ChartPoint[];
   height?: number;
   width?: number;
   formatValue?: (v: number) => string;
+  onPointPress?: (index: number) => void;
+  selectedIndex?: number | null;
 }) {
   if (points.length === 0) {
     return (
@@ -75,15 +79,31 @@ export function LineChart({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {coords.map((c, i) => (
-          <Circle
-            key={i}
-            cx={c.x}
-            cy={c.y}
-            r={i === coords.length - 1 ? 4 : 2.5}
-            fill={i === coords.length - 1 ? colors.accent : colors.textFaint}
-          />
-        ))}
+        {coords.map((c, i) => {
+          const isSelected = selectedIndex === i;
+          const isLast = i === coords.length - 1;
+          return (
+            <React.Fragment key={i}>
+              <Circle
+                cx={c.x}
+                cy={c.y}
+                r={isSelected ? 6 : isLast ? 4 : 2.5}
+                fill={isSelected || isLast ? colors.accent : colors.textFaint}
+                stroke={isSelected ? colors.textPrimary : undefined}
+                strokeWidth={isSelected ? 2 : undefined}
+              />
+              {onPointPress ? (
+                <Circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={14}
+                  fill="transparent"
+                  onPress={() => onPointPress(i)}
+                />
+              ) : null}
+            </React.Fragment>
+          );
+        })}
         {/* max label */}
         <SvgText
           x={last.x}

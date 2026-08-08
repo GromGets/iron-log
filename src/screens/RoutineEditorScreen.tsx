@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Modal, TextInput, Pressable } from 'react-native';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen, Card, Button, EmptyState, Eyebrow } from '@/components/UI';
 import { colors, space, type, radius } from '@/theme/theme';
 import {
@@ -18,6 +19,7 @@ type RoutineExerciseRow = RoutineExercise & { exercise: Exercise };
 
 export default function RoutineEditorScreen() {
   const route = useRoute<Route_>();
+  const insets = useSafeAreaInsets();
   const routineId = route.params.routineId!;
   const [items, setItems] = useState<RoutineExerciseRow[]>([]);
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -57,7 +59,7 @@ export default function RoutineEditorScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: space.xxl * 2 + insets.bottom }]}>
         <Eyebrow>Exercises in this routine</Eyebrow>
         <View style={{ marginTop: space.md, gap: space.sm }}>
           {items.length === 0 && (
@@ -101,7 +103,7 @@ export default function RoutineEditorScreen() {
               </Pressable>
             ))}
           </ScrollView>
-          <View style={{ padding: space.lg }}>
+          <View style={{ padding: space.lg, paddingBottom: space.lg + insets.bottom }}>
             <Button label="Close" variant="secondary" onPress={() => setPickerVisible(false)} />
           </View>
         </Screen>

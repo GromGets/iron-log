@@ -1,6 +1,12 @@
 import { getDb } from './database';
 import { SetEntry } from '@/types';
 
+export interface ExerciseSetSummary {
+  weight: number;
+  reps: number;
+  rir?: number | null;
+}
+
 export interface ExercisePoint {
   date: string; // session startedAt
   maxWeight: number;
@@ -8,6 +14,8 @@ export interface ExercisePoint {
   totalVolume: number; // sum weight*reps across all sets that day
   estOneRepMax: number;
   topReps: number;
+  firstSetWeight: number; // weight of the first set logged that day, chronologically
+  sets: ExerciseSetSummary[]; // all sets that day, in the order they were logged
 }
 
 // Epley formula: 1RM = weight * (1 + reps/30)
@@ -19,19 +27,19 @@ function estimate1RM(weight: number, reps: number): number {
 export async function getExerciseHistory(exerciseId: string): Promise<ExercisePoint[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<any>(
-    `SELECT sess.startedAt as date, s.weight as weight, s.reps as reps
+    `SELECT sess.startedAt as date, s.weight as weight, s.reps as reps, s.rir as rir
      FROM sets s
      JOIN sessions sess ON sess.id = s.sessionId
      WHERE s.exerciseId = ?
-     ORDER BY sess.startedAt ASC`,
+     ORDER BY sess.startedAt ASC, s.createdAt ASC`,
     [exerciseId]
   );
 
-  const byDate = new Map<string, { weight: number; reps: number }[]>();
+  const byDate = new Map<string, ExerciseSetSummary[]>();
   for (const r of rows) {
     const dayKey = r.date.slice(0, 10); // group by day
     if (!byDate.has(dayKey)) byDate.set(dayKey, []);
-    byDate.get(dayKey)!.push({ weight: r.weight, reps: r.reps });
+    byDate.get(dayKey)!.push({ weight: r.weight, reps: r.reps, rir: r.rir });
   }
 
   const points: ExercisePoint[] = [];
@@ -48,7 +56,16 @@ export async function getExerciseHistory(exerciseId: string): Promise<ExercisePo
       if (orm > estOneRepMax) estOneRepMax = orm;
       if (s.reps > topReps) topReps = s.reps;
     }
-    points.push({ date, maxWeight, bestSetVolume, totalVolume, estOneRepMax, topReps });
+    points.push({
+      date,
+      maxWeight,
+      bestSetVolume,
+      totalVolume,
+      estOneRepMax,
+      topReps,
+      firstSetWeight: sets[0].weight,
+      sets,
+    });
   }
 
   return points;

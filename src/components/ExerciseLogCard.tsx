@@ -4,6 +4,7 @@ import { Card, Eyebrow, Button, Pill } from '@/components/UI';
 import { colors, space, type, radius } from '@/theme/theme';
 import { Exercise, SetEntry } from '@/types';
 import { addSet, deleteSet, getLastTimeForExercise } from '@/db/repository';
+import { formatSetLine } from '@/utils/format';
 
 export function ExerciseLogCard({
   exercise,
@@ -69,14 +70,9 @@ export function ExerciseLogCard({
       {lastTime ? (
         <View style={styles.lastTimeBox}>
           <Eyebrow>Last time — {formatRelativeDate(lastTime.date)}</Eyebrow>
-          <View style={styles.lastTimeSets}>
-            {lastTime.sets.map((s) => (
-              <Text key={s.id} style={styles.lastTimeText}>
-                {s.weight}kg × {s.reps}
-                {s.rir != null ? ` @${s.rir}RIR` : ''}
-              </Text>
-            ))}
-          </View>
+          <Text style={styles.lastTimeText}>
+            {lastTime.sets.map((s) => formatSetLine(s)).join(',  ')}
+          </Text>
         </View>
       ) : (
         <Text style={[type.bodySecondary, { marginTop: space.xs }]}>First time logging this exercise</Text>
@@ -87,8 +83,7 @@ export function ExerciseLogCard({
           {sets.map((s, idx) => (
             <View key={s.id} style={styles.setRow}>
               <Text style={type.statMedium}>
-                {idx + 1}. {s.weight}kg × {s.reps}
-                {s.rir != null ? ` @${s.rir}RIR` : ''}
+                {idx + 1}. {formatSetLine(s)}
               </Text>
               <Pressable onPress={() => handleDeleteSet(s.id)}>
                 <Text style={{ color: colors.danger, fontSize: 13 }}>✕</Text>
@@ -160,17 +155,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentSoft,
     borderRadius: radius.sm,
   },
-  lastTimeSets: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: space.sm,
-    marginTop: 4,
-  },
   lastTimeText: {
     fontFamily: type.statMedium.fontFamily,
     fontSize: 13,
     fontWeight: '600',
     color: colors.accent,
+    marginTop: 4,
+    lineHeight: 18,
   },
   setRow: {
     flexDirection: 'row',

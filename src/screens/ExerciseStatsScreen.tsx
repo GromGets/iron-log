@@ -1,28 +1,33 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen, Card, Eyebrow, StatBlock, EmptyState } from '@/components/UI';
 import { space, type, colors } from '@/theme/theme';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { getExerciseHistory, getPersonalRecords, ExercisePoint, PersonalRecords } from '@/db/stats';
 import { LineChart } from '@/components/LineChart';
+import { formatSetLine } from '@/utils/format';
 
 type Route_ = RouteProp<RootStackParamList, 'ExerciseStats'>;
 
-type Metric = 'maxWeight' | 'estOneRepMax' | 'totalVolume';
+type Metric = 'firstSetWeight' | 'maxWeight' | 'estOneRepMax' | 'totalVolume';
 
 const METRIC_LABELS: Record<Metric, string> = {
-  maxWeight: 'Max Weight (kg)',
-  estOneRepMax: 'Est. 1RM (kg)',
-  totalVolume: 'Total Volume',
+  firstSetWeight: 'First Set',
+  maxWeight: 'Max Weight',
+  estOneRepMax: 'Est. 1RM',
+  totalVolume: 'Volume',
 };
 
 export default function ExerciseStatsScreen() {
   const route = useRoute<Route_>();
+  const insets = useSafeAreaInsets();
   const { exerciseId } = route.params;
   const [history, setHistory] = useState<ExercisePoint[]>([]);
   const [prs, setPrs] = useState<PersonalRecords | null>(null);
-  const [metric, setMetric] = useState<Metric>('maxWeight');
+  const [metric, setMetric] = useState<Metric>('firstSetWeight');
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const [h, p] = await Promise.all([getExerciseHistory(exerciseId), getPersonalRecords(exerciseId)]);
@@ -49,7 +54,7 @@ export default function ExerciseStatsScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: space.xxl * 2 + insets.bottom }]}>
         <Card>
           <Eyebrow>Personal Records</Eyebrow>
           <View style={styles.prGrid}>
@@ -76,8 +81,31 @@ export default function ExerciseStatsScreen() {
               width={300}
               height={160}
               formatValue={(v) => Math.round(v * 10) / 10 + ''}
+              selectedIndex={selectedIndex}
+              onPointPress={(i) => setSelectedIndex((cur) => (cur === i ? null : i))}
             />
           </View>
+          <Text style={[type.bodySecondary, { textAlign: 'center', marginTop: space.xs, fontSize: 12 }]}>
+            Tap a point to see that day's sets
+          </Text>
+
+          {selectedIndex != null && history[selectedIndex] ? (
+            <View style={styles.detailBox}>
+              <View style={styles.detailHeader}>
+                <Text style={type.subtitle}>{formatDate(history[selectedIndex].date.slice(0, 10))}</Text>
+                <Text style={type.bodySecondary}>
+                  {history[selectedIndex].sets.length} set{history[selectedIndex].sets.length === 1 ? '' : 's'}
+                </Text>
+              </View>
+              <View style={{ marginTop: space.sm, gap: 4 }}>
+                {history[selectedIndex].sets.map((s, i) => (
+                  <Text key={i} style={type.statMedium}>
+                    {i + 1}. {formatSetLine(s)}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </Card>
 
         <View style={{ marginTop: space.xl }}>
@@ -127,6 +155,19 @@ const styles = StyleSheet.create({
   },
   metricTabActive: {
     backgroundColor: colors.accent,
+  },
+  detailBox: {
+    marginTop: space.lg,
+    padding: space.md,
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   historyRow: {
     flexDirection: 'row',

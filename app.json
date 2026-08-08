@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#121316",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -19,7 +20,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#121316"
+        "backgroundColor": "#121316",
+        "foregroundImage": "./assets/adaptive-icon.png"
       },
       "package": "com.ironlog.app"
     },
