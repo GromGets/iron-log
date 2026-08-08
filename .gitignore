@@ -12,3 +12,4 @@ web-build/
 npm-debug.*
 *.log
 .vscode/
+.claude/scheduled_tasks.lock
