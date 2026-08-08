@@ -12,7 +12,31 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(eas build *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(eas build:view 9751cb5d-3e7e-442f-b700-4bd40806f58f)",
+      "WebFetch(domain:expo.dev)",
+      "Bash(eas build:view 9751cb5d-3e7e-442f-b700-4bd40806f58f --json)",
+      "Bash(curl -s \"https://storage.googleapis.com/eas-workflows-production/logs/7f417772-7233-4a6e-9ae7-bff9cbdf81ef/9751cb5d-3e7e-442f-b700-4bd40806f58f/2026-08-08T03%3A55%3A42Z-73e75d96-582f-4cbd-8b2f-185ac8f1ac22.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260808%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260808T035755Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=99268d9691b3d734bf97ff0e481e3381c7af86d28ed7acaeb52e2efefbdc3e40950ebdaf2d5249b562a9f1ffd8672d34986ea45ddd72f9cd0709eff29f6c275d1360bb9fa8d2b223458ef7d6cac83a70e7eb9e67964c516182ce0c2177ad500b61b09126f62659c32610692ab07f7891ab4d09c6f41947ad9f52af06b87a5075ef12b818448df3fdc970b3c824f6271c6c875c04a3ab8a67762a3f2d6c2900178dfd666c0aeb93a93e672d5fc4d4997ee4e11f70fbf17240898a903c0c436730dfd4f0b9419a01827b0a3b4c2127caca30fe86da5485c2f9d96b4c062dc55b340675a72db7f784c3bf0671ab509c29ef54f904ecb33488d240a3c2708e4866dc\" -o /tmp/eas_build_log.txt -w \"HTTP %{http_code}, size: %{size_download}\\\\n\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\agust\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\I--gym-tracker\\\\11a3d109-7ff1-4fea-a22c-923d35f39a9f\\\\scratchpad\" && cp /tmp/eas_build_log.txt \"C:\\\\Users\\\\agust\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\I--gym-tracker\\\\11a3d109-7ff1-4fea-a22c-923d35f39a9f\\\\scratchpad\\\\eas_build_log.txt\" && ls -la \"C:\\\\Users\\\\agust\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\I--gym-tracker\\\\11a3d109-7ff1-4fea-a22c-923d35f39a9f\\\\scratchpad\\\\\")",
+      "Bash(cygpath -w /tmp/eas_build_log.txt)",
+      "Bash(gunzip -c /tmp/eas_build_log.txt)",
+      "Bash(cygpath -w /tmp/eas_build_log_decoded.txt)",
+      "Bash(xxd /tmp/eas_build_log.txt)",
+      "Bash(xxd)",
+      "Bash(curl -sI \"https://storage.googleapis.com/eas-workflows-production/logs/7f417772-7233-4a6e-9ae7-bff9cbdf81ef/9751cb5d-3e7e-442f-b700-4bd40806f58f/2026-08-08T03%3A55%3A42Z-73e75d96-582f-4cbd-8b2f-185ac8f1ac22.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260808%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260808T035755Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=99268d9691b3d734bf97ff0e481e3381c7af86d28ed7acaeb52e2efefbdc3e40950ebdaf2d5249b562a9f1ffd8672d34986ea45ddd72f9cd0709eff29f6c275d1360bb9fa8d2b223458ef7d6cac83a70e7eb9e67964c516182ce0c2177ad500b61b09126f62659c32610692ab07f7891ab4d09c6f41947ad9f52af06b87a5075ef12b818448df3fdc970b3c824f6271c6c875c04a3ab8a67762a3f2d6c2900178dfd666c0aeb93a93e672d5fc4d4997ee4e11f70fbf17240898a903c0c436730dfd4f0b9419a01827b0a3b4c2127caca30fe86da5485c2f9d96b4c062dc55b340675a72db7f784c3bf0671ab509c29ef54f904ecb33488d240a3c2708e4866dc\")",
+      "Bash(python3 -c ' *)",
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(mkdir -p \"C:\\\\Users\\\\agust\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\I--gym-tracker\\\\11a3d109-7ff1-4fea-a22c-923d35f39a9f\\\\scratchpad\\\\icon-gen\")",
+      "Bash(npm init *)",
+      "Bash(mkdir -p out)",
+      "Bash(node generate.js)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:8081/status)",
+      "Bash(curl -s \"http://localhost:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false\" -o /tmp/bundle_check.js -w \"HTTP %{http_code}\\\\n\" --max-time 120)",
+      "Bash(node generate2.js)",
+      "Bash(curl -s \"http://localhost:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&hot=false\" -o /tmp/bundle_check2.js -w \"HTTP %{http_code}\\\\n\" --max-time 120)"
     ]
   }
 }
