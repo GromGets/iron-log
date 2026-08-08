@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen, Card, Eyebrow, StatBlock, EmptyState } from '@/components/UI';
 import { space, type, colors } from '@/theme/theme';
 import { RootStackParamList } from '@/navigation/RootNavigator';
-import { getExerciseHistory, getPersonalRecords, ExercisePoint, PersonalRecords } from '@/db/stats';
+import { getExerciseHistory, getPersonalRecords, ExercisePoint, PersonalRecords, ExerciseSetSummary } from '@/db/stats';
+import { deleteSet } from '@/db/repository';
 import { LineChart } from '@/components/LineChart';
 import { formatSetLine } from '@/utils/format';
 
@@ -40,6 +41,21 @@ export default function ExerciseStatsScreen() {
       load();
     }, [load])
   );
+
+  const handleDeleteSet = (set: ExerciseSetSummary) => {
+    Alert.alert('Delete set', `Remove ${formatSetLine(set)} for good?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteSet(set.id);
+          setSelectedIndex(null);
+          load();
+        },
+      },
+    ]);
+  };
 
   if (history.length === 0) {
     return (
@@ -99,9 +115,14 @@ export default function ExerciseStatsScreen() {
               </View>
               <View style={{ marginTop: space.sm, gap: 4 }}>
                 {history[selectedIndex].sets.map((s, i) => (
-                  <Text key={i} style={type.statMedium}>
-                    {i + 1}. {formatSetLine(s)}
-                  </Text>
+                  <View key={s.id} style={styles.detailSetRow}>
+                    <Text style={[type.statMedium, { flex: 1 }]}>
+                      {i + 1}. {formatSetLine(s)}
+                    </Text>
+                    <Pressable onPress={() => handleDeleteSet(s)} hitSlop={8}>
+                      <Text style={{ color: colors.danger, fontSize: 15 }}>✕</Text>
+                    </Pressable>
+                  </View>
                 ))}
               </View>
             </View>
@@ -168,6 +189,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  detailSetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.sm,
   },
   historyRow: {
     flexDirection: 'row',

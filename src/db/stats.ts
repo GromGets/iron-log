@@ -2,6 +2,7 @@ import { getDb } from './database';
 import { SetEntry } from '@/types';
 
 export interface ExerciseSetSummary {
+  id: string;
   weight: number;
   reps: number;
   rir?: number | null;
@@ -27,7 +28,7 @@ function estimate1RM(weight: number, reps: number): number {
 export async function getExerciseHistory(exerciseId: string): Promise<ExercisePoint[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<any>(
-    `SELECT sess.startedAt as date, s.weight as weight, s.reps as reps, s.rir as rir
+    `SELECT sess.startedAt as date, s.id as id, s.weight as weight, s.reps as reps, s.rir as rir
      FROM sets s
      JOIN sessions sess ON sess.id = s.sessionId
      WHERE s.exerciseId = ?
@@ -39,7 +40,7 @@ export async function getExerciseHistory(exerciseId: string): Promise<ExercisePo
   for (const r of rows) {
     const dayKey = r.date.slice(0, 10); // group by day
     if (!byDate.has(dayKey)) byDate.set(dayKey, []);
-    byDate.get(dayKey)!.push({ weight: r.weight, reps: r.reps, rir: r.rir });
+    byDate.get(dayKey)!.push({ id: r.id, weight: r.weight, reps: r.reps, rir: r.rir });
   }
 
   const points: ExercisePoint[] = [];

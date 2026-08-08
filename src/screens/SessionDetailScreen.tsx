@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen, Card, Eyebrow, Button } from '@/components/UI';
-import { space, type } from '@/theme/theme';
-import { getSessionSets, deleteSession, listExercises } from '@/db/repository';
+import { colors, space, type } from '@/theme/theme';
+import { getSessionSets, deleteSession, deleteSet, listExercises } from '@/db/repository';
 import { SetEntry, Exercise } from '@/types';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { formatSetLine } from '@/utils/format';
@@ -53,6 +53,20 @@ export default function SessionDetailScreen() {
     ]);
   };
 
+  const handleDeleteSet = (set: SetEntry) => {
+    Alert.alert('Delete set', `Remove ${formatSetLine(set)} for good?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteSet(set.id);
+          setSets((prev) => prev.filter((s) => s.id !== set.id));
+        },
+      },
+    ]);
+  };
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: space.xxl * 2 + insets.bottom }]}>
@@ -61,10 +75,15 @@ export default function SessionDetailScreen() {
             <Eyebrow>{exercisesById[exId]?.name ?? 'Exercise'}</Eyebrow>
             <View style={{ marginTop: space.sm, gap: space.xs }}>
               {exSets.map((s) => (
-                <Text key={s.id} style={type.statMedium}>
-                  {s.setIndex}. {formatSetLine(s)}
-                  {s.notes ? ` — ${s.notes}` : ''}
-                </Text>
+                <View key={s.id} style={styles.setRow}>
+                  <Text style={[type.statMedium, { flex: 1 }]}>
+                    {s.setIndex}. {formatSetLine(s)}
+                    {s.notes ? ` — ${s.notes}` : ''}
+                  </Text>
+                  <Pressable onPress={() => handleDeleteSet(s)} hitSlop={8}>
+                    <Text style={{ color: colors.danger, fontSize: 15 }}>✕</Text>
+                  </Pressable>
+                </View>
               ))}
             </View>
           </Card>
@@ -81,5 +100,11 @@ const styles = StyleSheet.create({
   content: {
     padding: space.lg,
     paddingBottom: space.xxl * 2,
+  },
+  setRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.sm,
   },
 });
