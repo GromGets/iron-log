@@ -10,8 +10,11 @@ import {
   addBodyMeasurement,
   listBodyMeasurements,
   deleteBodyMeasurement,
+  listMeasurementTypes,
+  addMeasurementType,
+  deleteMeasurementType,
 } from '@/db/repository';
-import { BodyWeightEntry, BodyMeasurementEntry, MeasurementType } from '@/types';
+import { BodyWeightEntry, BodyMeasurementEntry, MeasurementTypeDef } from '@/types';
 import { LineChart } from '@/components/LineChart';
 
 function formatDate(iso: string): string {
@@ -19,21 +22,10 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-const MEASUREMENT_TYPES: MeasurementType[] = [
-  'Waist',
-  'Chest',
-  'Left Arm',
-  'Right Arm',
-  'Left Thigh',
-  'Right Thigh',
-  'Hips',
-  'Neck',
-  'Shoulders',
-];
-
 export default function BodyTrackingScreen() {
   const [weights, setWeights] = useState<BodyWeightEntry[]>([]);
-  const [measurementType, setMeasurementType] = useState<MeasurementType>('Waist');
+  const [types, setTypes] = useState<MeasurementTypeDef[]>([]);
+  const [measurementType, setMeasurementType] = useState<string>('');
   const [measurements, setMeasurements] = useState<BodyMeasurementEntry[]>([]);
 
   const [weightModalVisible, setWeightModalVisible] = useState(false);
@@ -41,19 +33,73 @@ export default function BodyTrackingScreen() {
 
   const [measureModalVisible, setMeasureModalVisible] = useState(false);
   const [measureInput, setMeasureInput] = useState('');
-  const [measureTypeInput, setMeasureTypeInput] = useState<MeasurementType>('Waist');
+  const [measureTypeInput, setMeasureTypeInput] = useState<string>('');
+
+  const [addTypeModalVisible, setAddTypeModalVisible] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
+
+  const loadTypes = useCallback(async () => {
+    const t = await listMeasurementTypes();
+    setTypes(t);
+    setMeasurementType((cur) => (cur && t.some((x) => x.name === cur) ? cur : t[0]?.name ?? ''));
+  }, []);
 
   const load = useCallback(async () => {
-    const [w, m] = await Promise.all([listBodyWeights(60), listBodyMeasurements(measurementType, 60)]);
+    const [w, m] = await Promise.all([
+      listBodyWeights(60),
+      measurementType ? listBodyMeasurements(measurementType, 60) : Promise.resolve([]),
+    ]);
     setWeights(w);
     setMeasurements(m);
   }, [measurementType]);
 
   useFocusEffect(
     useCallback(() => {
+      loadTypes();
+    }, [loadTypes])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
       load();
     }, [load])
   );
+
+  const handleAddType = async () => {
+    const name = newTypeName.trim();
+    if (!name) return;
+    if (types.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
+      Alert.alert('Already exists', `"${name}" is already a category.`);
+      return;
+    }
+    const created = await addMeasurementType(name);
+    setNewTypeName('');
+    setAddTypeModalVisible(false);
+    setTypes((prev) => [...prev, created]);
+    setMeasurementType(created.name);
+  };
+
+  const handleDeleteType = (t: MeasurementTypeDef) => {
+    Alert.alert(
+      'Delete category',
+      `Remove "${t.name}" from your measurement categories? Past entries logged under it won't be deleted.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteMeasurementType(t.id);
+            setTypes((prev) => {
+              const remaining = prev.filter((x) => x.id !== t.id);
+              if (measurementType === t.name) setMeasurementType(remaining[0]?.name ?? '');
+              return remaining;
+            });
+          },
+        },
+      ]
+    );
+  };
 
   const handleAddWeight = async () => {
     const v = parseFloat(weightInput);
@@ -66,7 +112,7 @@ export default function BodyTrackingScreen() {
 
   const handleAddMeasurement = async () => {
     const v = parseFloat(measureInput);
-    if (isNaN(v)) return;
+    if (isNaN(v) || !measureTypeInput) return;
     await addBodyMeasurement(measureTypeInput, v);
     setMeasureInput('');
     setMeasureModalVisible(false);
@@ -141,30 +187,51 @@ export default function BodyTrackingScreen() {
         <Card style={{ marginTop: space.lg }}>
           <View style={styles.cardHeader}>
             <Eyebrow>Measurements</Eyebrow>
-            <Pressable onPress={() => setMeasureModalVisible(true)}>
-              <Text style={styles.addLink}>+ Log</Text>
-            </Pressable>
+            {types.length > 0 ? (
+              <Pressable
+                onPress={() => {
+                  setMeasureTypeInput(measurementType);
+                  setMeasureModalVisible(true);
+                }}
+              >
+                <Text style={styles.addLink}>+ Log</Text>
+              </Pressable>
+            ) : null}
           </View>
           <View style={styles.typeTabs}>
-            {MEASUREMENT_TYPES.map((t) => (
+            {types.map((t) => (
               <Pressable
-                key={t}
-                onPress={() => setMeasurementType(t)}
-                style={[styles.typeChip, measurementType === t && styles.typeChipActive]}
+                key={t.id}
+                onPress={() => setMeasurementType(t.name)}
+                onLongPress={() => handleDeleteType(t)}
+                style={[styles.typeChip, measurementType === t.name && styles.typeChipActive]}
               >
                 <Text
                   style={[
                     type.bodySecondary,
                     { fontSize: 12 },
-                    measurementType === t && { color: colors.surfaceSunken, fontWeight: '700' },
+                    measurementType === t.name && { color: colors.surfaceSunken, fontWeight: '700' },
                   ]}
                 >
-                  {t}
+                  {t.name}
                 </Text>
               </Pressable>
             ))}
+            <Pressable onPress={() => setAddTypeModalVisible(true)} style={[styles.typeChip, styles.typeChipAdd]}>
+              <Text style={[type.bodySecondary, { fontSize: 12, color: colors.accent, fontWeight: '700' }]}>
+                + Add
+              </Text>
+            </Pressable>
           </View>
-          {measurements.length === 0 ? (
+          {types.length > 0 ? (
+            <Text style={styles.hint}>Long-press a category to remove it</Text>
+          ) : null}
+          {types.length === 0 ? (
+            <EmptyState
+              title="No categories yet"
+              body="Add a category like 'Calf' to start tracking a measurement."
+            />
+          ) : measurements.length === 0 ? (
             <EmptyState title="No entries yet" body={`Log your ${measurementType.toLowerCase()} measurement to see it change over time.`} />
           ) : (
             <>
@@ -219,20 +286,20 @@ export default function BodyTrackingScreen() {
           <View style={styles.modalCard}>
             <Text style={type.title}>Log measurement</Text>
             <View style={styles.typeTabs}>
-              {MEASUREMENT_TYPES.map((t) => (
+              {types.map((t) => (
                 <Pressable
-                  key={t}
-                  onPress={() => setMeasureTypeInput(t)}
-                  style={[styles.typeChip, measureTypeInput === t && styles.typeChipActive]}
+                  key={t.id}
+                  onPress={() => setMeasureTypeInput(t.name)}
+                  style={[styles.typeChip, measureTypeInput === t.name && styles.typeChipActive]}
                 >
                   <Text
                     style={[
                       type.bodySecondary,
                       { fontSize: 12 },
-                      measureTypeInput === t && { color: colors.surfaceSunken, fontWeight: '700' },
+                      measureTypeInput === t.name && { color: colors.surfaceSunken, fontWeight: '700' },
                     ]}
                   >
-                    {t}
+                    {t.name}
                   </Text>
                 </Pressable>
               ))}
@@ -251,6 +318,37 @@ export default function BodyTrackingScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Button label="Save" onPress={handleAddMeasurement} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={addTypeModalVisible} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={type.title}>New category</Text>
+            <TextInput
+              value={newTypeName}
+              onChangeText={setNewTypeName}
+              placeholder="e.g. Calf"
+              placeholderTextColor={colors.textFaint}
+              style={styles.input}
+              autoFocus
+            />
+            <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.lg }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Cancel"
+                  variant="secondary"
+                  onPress={() => {
+                    setAddTypeModalVisible(false);
+                    setNewTypeName('');
+                  }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Add" onPress={handleAddType} />
               </View>
             </View>
           </View>
@@ -298,6 +396,15 @@ const styles = StyleSheet.create({
   typeChipActive: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
+  },
+  typeChipAdd: {
+    borderColor: colors.accent,
+    borderStyle: 'dashed',
+  },
+  hint: {
+    color: colors.textFaint,
+    fontSize: 11,
+    marginTop: space.xs,
   },
   modalBackdrop: {
     flex: 1,

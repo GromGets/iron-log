@@ -11,6 +11,7 @@ import {
   BodyWeightEntry,
   BodyMeasurementEntry,
   MeasurementType,
+  MeasurementTypeDef,
 } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -294,4 +295,35 @@ export async function listBodyMeasurements(
 export async function deleteBodyMeasurement(id: string): Promise<void> {
   const db = await getDb();
   await db.runAsync('DELETE FROM body_measurements WHERE id = ?', [id]);
+}
+
+// ---------------------------------------------------------------------------
+// Measurement types (user-configurable categories for body measurements)
+// ---------------------------------------------------------------------------
+
+export async function listMeasurementTypes(): Promise<MeasurementTypeDef[]> {
+  const db = await getDb();
+  return db.getAllAsync<MeasurementTypeDef>(
+    'SELECT * FROM measurement_types ORDER BY orderIndex ASC'
+  );
+}
+
+export async function addMeasurementType(name: string): Promise<MeasurementTypeDef> {
+  const db = await getDb();
+  const trimmed = name.trim();
+  const maxRow = await db.getFirstAsync<{ maxOrder: number }>(
+    'SELECT MAX(orderIndex) as maxOrder FROM measurement_types'
+  );
+  const orderIndex = (maxRow?.maxOrder ?? -1) + 1;
+  const id = uuidv4();
+  await db.runAsync(
+    'INSERT INTO measurement_types (id, name, orderIndex) VALUES (?, ?, ?)',
+    [id, trimmed, orderIndex]
+  );
+  return { id, name: trimmed, orderIndex };
+}
+
+export async function deleteMeasurementType(id: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM measurement_types WHERE id = ?', [id]);
 }

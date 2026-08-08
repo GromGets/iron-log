@@ -58,16 +58,13 @@ export interface BodyWeightEntry {
   weightKg: number;
 }
 
-export type MeasurementType =
-  | 'Waist'
-  | 'Chest'
-  | 'Left Arm'
-  | 'Right Arm'
-  | 'Left Thigh'
-  | 'Right Thigh'
-  | 'Hips'
-  | 'Neck'
-  | 'Shoulders';
+export type MeasurementType = string;
+
+export interface MeasurementTypeDef {
+  id: string;
+  name: string;
+  orderIndex: number;
+}
 
 export interface BodyMeasurementEntry {
   id: string;

@@ -73,6 +73,12 @@ async function migrate(db: SQLite.SQLiteDatabase) {
       valueCm REAL NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS measurement_types (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL UNIQUE,
+      orderIndex INTEGER NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sets_exercise ON sets(exerciseId);
     CREATE INDEX IF NOT EXISTS idx_sets_session ON sets(sessionId);
     CREATE INDEX IF NOT EXISTS idx_routine_exercises_routine ON routine_exercises(routineId);
@@ -84,6 +90,38 @@ async function migrate(db: SQLite.SQLiteDatabase) {
   if (!row || row.count === 0) {
     await seedExercises(db);
   }
+
+  const typeRow = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM measurement_types'
+  );
+  if (!typeRow || typeRow.count === 0) {
+    await seedMeasurementTypes(db);
+  }
+}
+
+const DEFAULT_MEASUREMENT_TYPES = [
+  'Waist',
+  'Chest',
+  'Left Arm',
+  'Right Arm',
+  'Left Thigh',
+  'Right Thigh',
+  'Hips',
+  'Neck',
+  'Shoulders',
+];
+
+async function seedMeasurementTypes(db: SQLite.SQLiteDatabase) {
+  await db.withTransactionAsync(async () => {
+    for (let i = 0; i < DEFAULT_MEASUREMENT_TYPES.length; i++) {
+      const name = DEFAULT_MEASUREMENT_TYPES[i];
+      const id = `seed_mt_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+      await db.runAsync(
+        'INSERT OR IGNORE INTO measurement_types (id, name, orderIndex) VALUES (?, ?, ?)',
+        [id, name, i]
+      );
+    }
+  });
 }
 
 async function seedExercises(db: SQLite.SQLiteDatabase) {
