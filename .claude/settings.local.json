@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm ls *)",
+      "Bash(npm install *)",
+      "Bash(eas whoami *)",
+      "Bash(eas build:configure -p android --non-interactive)",
+      "Bash(eas build:configure --help)",
+      "Bash(eas build:configure -p android)",
+      "Bash(eas init *)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

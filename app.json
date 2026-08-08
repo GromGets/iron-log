@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Iron Log",
+    "slug": "iron-log",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#121316",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ironlog.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#121316"
+      },
+      "package": "com.ironlog.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7f417772-7233-4a6e-9ae7-bff9cbdf81ef"
+      }
+    },
+    "owner": "gromgets"
+  }
+}
