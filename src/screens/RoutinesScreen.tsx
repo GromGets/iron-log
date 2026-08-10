@@ -7,11 +7,13 @@ import { colors, space, type, radius } from '@/theme/theme';
 import { listRoutines, createRoutine, deleteRoutine, getRoutineExercises } from '@/db/repository';
 import { Routine } from '@/types';
 import { RootStackParamList } from '@/navigation/RootNavigator';
+import { useActiveStudent } from '@/context/StudentContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function RoutinesScreen() {
   const navigation = useNavigation<Nav>();
+  const { activeStudentId } = useActiveStudent();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [exerciseCounts, setExerciseCounts] = useState<Record<string, number>>({});
   const [modalVisible, setModalVisible] = useState(false);
@@ -28,7 +30,7 @@ export default function RoutinesScreen() {
       })
     );
     setExerciseCounts(counts);
-  }, []);
+  }, [activeStudentId]);
 
   useFocusEffect(
     useCallback(() => {

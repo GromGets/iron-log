@@ -8,18 +8,20 @@ import { space, type } from '@/theme/theme';
 import { listSessions } from '@/db/repository';
 import { WorkoutSession } from '@/types';
 import { RootStackParamList } from '@/navigation/RootNavigator';
+import { useActiveStudent } from '@/context/StudentContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HistoryScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const { activeStudentId } = useActiveStudent();
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       listSessions(200).then(setSessions);
-    }, [])
+    }, [activeStudentId])
   );
 
   return (

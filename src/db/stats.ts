@@ -1,4 +1,5 @@
 import { getDb } from './database';
+import { getActiveStudentId } from './repository';
 import { SetEntry } from '@/types';
 
 export interface ExerciseSetSummary {
@@ -27,13 +28,14 @@ function estimate1RM(weight: number, reps: number): number {
 
 export async function getExerciseHistory(exerciseId: string): Promise<ExercisePoint[]> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const rows = await db.getAllAsync<any>(
     `SELECT sess.startedAt as date, s.id as id, s.weight as weight, s.reps as reps, s.rir as rir
      FROM sets s
      JOIN sessions sess ON sess.id = s.sessionId
-     WHERE s.exerciseId = ?
+     WHERE s.exerciseId = ? AND sess.studentId = ?
      ORDER BY sess.startedAt ASC, s.createdAt ASC`,
-    [exerciseId]
+    [exerciseId, studentId]
   );
 
   const byDate = new Map<string, ExerciseSetSummary[]>();
@@ -113,12 +115,14 @@ export interface WeeklyVolume {
 
 export async function getWeeklyVolume(weeks = 8): Promise<WeeklyVolume[]> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const rows = await db.getAllAsync<any>(
     `SELECT sess.startedAt as date, s.weight as weight, s.reps as reps
      FROM sets s
      JOIN sessions sess ON sess.id = s.sessionId
-     WHERE sess.finishedAt IS NOT NULL
-     ORDER BY sess.startedAt ASC`
+     WHERE sess.finishedAt IS NOT NULL AND sess.studentId = ?
+     ORDER BY sess.startedAt ASC`,
+    [studentId]
   );
 
   const byWeek = new Map<string, number>();
@@ -152,6 +156,7 @@ export interface MuscleGroupVolume {
 
 export async function getMuscleGroupVolume(days = 30): Promise<MuscleGroupVolume[]> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const since = new Date();
   since.setDate(since.getDate() - days);
   const rows = await db.getAllAsync<any>(
@@ -159,8 +164,8 @@ export async function getMuscleGroupVolume(days = 30): Promise<MuscleGroupVolume
      FROM sets s
      JOIN sessions sess ON sess.id = s.sessionId
      JOIN exercises e ON e.id = s.exerciseId
-     WHERE sess.startedAt >= ?`,
-    [since.toISOString()]
+     WHERE sess.startedAt >= ? AND sess.studentId = ?`,
+    [since.toISOString(), studentId]
   );
 
   const byGroup = new Map<string, { vol: number; count: number }>();
@@ -186,8 +191,10 @@ export interface StreakInfo {
 
 export async function getStreakInfo(): Promise<StreakInfo> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const rows = await db.getAllAsync<{ startedAt: string }>(
-    'SELECT startedAt FROM sessions WHERE finishedAt IS NOT NULL ORDER BY startedAt DESC'
+    'SELECT startedAt FROM sessions WHERE finishedAt IS NOT NULL AND studentId = ? ORDER BY startedAt DESC',
+    [studentId]
   );
 
   const dayKeys = Array.from(new Set(rows.map((r) => r.startedAt.slice(0, 10)))).sort().reverse();

@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Screen, Card, Eyebrow, Button, EmptyState } from '@/components/UI';
 import { colors, space, type, radius } from '@/theme/theme';
 import {
@@ -16,6 +17,11 @@ import {
 } from '@/db/repository';
 import { BodyWeightEntry, BodyMeasurementEntry, MeasurementTypeDef } from '@/types';
 import { LineChart } from '@/components/LineChart';
+import { useActiveStudent } from '@/context/StudentContext';
+import { TabParamList } from '@/navigation/RootNavigator';
+
+type TabNav = BottomTabNavigationProp<TabParamList, 'Body'>;
+type Route_ = RouteProp<TabParamList, 'Body'>;
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -23,6 +29,9 @@ function formatDate(iso: string): string {
 }
 
 export default function BodyTrackingScreen() {
+  const { activeStudentId } = useActiveStudent();
+  const tabNavigation = useNavigation<TabNav>();
+  const route = useRoute<Route_>();
   const [weights, setWeights] = useState<BodyWeightEntry[]>([]);
   const [types, setTypes] = useState<MeasurementTypeDef[]>([]);
   const [measurementType, setMeasurementType] = useState<string>('');
@@ -42,7 +51,7 @@ export default function BodyTrackingScreen() {
     const t = await listMeasurementTypes();
     setTypes(t);
     setMeasurementType((cur) => (cur && t.some((x) => x.name === cur) ? cur : t[0]?.name ?? ''));
-  }, []);
+  }, [activeStudentId]);
 
   const load = useCallback(async () => {
     const [w, m] = await Promise.all([
@@ -51,7 +60,7 @@ export default function BodyTrackingScreen() {
     ]);
     setWeights(w);
     setMeasurements(m);
-  }, [measurementType]);
+  }, [measurementType, activeStudentId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,6 +72,16 @@ export default function BodyTrackingScreen() {
     useCallback(() => {
       load();
     }, [load])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params?.openAdd) {
+        setMeasureTypeInput(measurementType);
+        setMeasureModalVisible(true);
+        tabNavigation.setParams({ openAdd: undefined });
+      }
+    }, [route.params?.openAdd, measurementType, tabNavigation])
   );
 
   const handleAddType = async () => {

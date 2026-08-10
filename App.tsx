@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from '@/navigation/RootNavigator';
 import { getDb } from '@/db/database';
 import { colors, type } from '@/theme/theme';
+import { StudentProvider } from '@/context/StudentContext';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -38,7 +39,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <RootNavigator />
+      <StudentProvider>
+        <RootNavigator />
+      </StudentProvider>
     </SafeAreaProvider>
   );
 }

@@ -1,6 +1,6 @@
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
-import { getDb } from './database';
+import { getDb, seedMeasurementTypesForStudent } from './database';
 import {
   Exercise,
   MuscleGroup,
@@ -12,7 +12,50 @@ import {
   BodyMeasurementEntry,
   MeasurementType,
   MeasurementTypeDef,
+  Student,
 } from '@/types';
+
+// ---------------------------------------------------------------------------
+// Students — the currently active one silently scopes routines, sessions,
+// body tracking, and measurement categories for every function below that
+// doesn't already take a specific row id. Screens never pass a studentId
+// themselves; switching students (via StudentContext) just changes what
+// getActiveStudentId() returns on the next call.
+// ---------------------------------------------------------------------------
+
+export async function listStudents(): Promise<Student[]> {
+  const db = await getDb();
+  return db.getAllAsync<Student>('SELECT * FROM students ORDER BY createdAt ASC');
+}
+
+export async function addStudent(name: string): Promise<Student> {
+  const db = await getDb();
+  const id = uuidv4();
+  const createdAt = new Date().toISOString();
+  const trimmed = name.trim();
+  await db.runAsync('INSERT INTO students (id, name, createdAt) VALUES (?, ?, ?)', [
+    id,
+    trimmed,
+    createdAt,
+  ]);
+  await seedMeasurementTypesForStudent(db, id);
+  return { id, name: trimmed, createdAt };
+}
+
+export async function getActiveStudentId(): Promise<string> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ value: string }>(
+    "SELECT value FROM settings WHERE key = 'activeStudentId'"
+  );
+  return row?.value ?? 'default';
+}
+
+export async function setActiveStudentId(id: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync("INSERT OR REPLACE INTO settings (key, value) VALUES ('activeStudentId', ?)", [
+    id,
+  ]);
+}
 
 // ---------------------------------------------------------------------------
 // Exercises
@@ -59,18 +102,24 @@ function rowToExercise(row: any): Exercise {
 
 export async function listRoutines(): Promise<Routine[]> {
   const db = await getDb();
-  const rows = await db.getAllAsync<any>('SELECT * FROM routines ORDER BY createdAt DESC');
+  const studentId = await getActiveStudentId();
+  const rows = await db.getAllAsync<any>(
+    'SELECT * FROM routines WHERE studentId = ? ORDER BY createdAt DESC',
+    [studentId]
+  );
   return rows;
 }
 
 export async function createRoutine(name: string): Promise<Routine> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const id = uuidv4();
   const createdAt = new Date().toISOString();
-  await db.runAsync('INSERT INTO routines (id, name, createdAt) VALUES (?, ?, ?)', [
+  await db.runAsync('INSERT INTO routines (id, name, createdAt, studentId) VALUES (?, ?, ?, ?)', [
     id,
     name.trim(),
     createdAt,
+    studentId,
   ]);
   return { id, name: name.trim(), createdAt };
 }
@@ -140,11 +189,12 @@ export async function startSession(
   routineName?: string
 ): Promise<WorkoutSession> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const id = uuidv4();
   const startedAt = new Date().toISOString();
   await db.runAsync(
-    'INSERT INTO sessions (id, routineId, routineName, startedAt, finishedAt) VALUES (?, ?, ?, ?, NULL)',
-    [id, routineId ?? null, routineName ?? null, startedAt]
+    'INSERT INTO sessions (id, routineId, routineName, startedAt, finishedAt, studentId) VALUES (?, ?, ?, ?, NULL, ?)',
+    [id, routineId ?? null, routineName ?? null, startedAt, studentId]
   );
   return { id, routineId, routineName, startedAt, finishedAt: null };
 }
@@ -165,9 +215,10 @@ export async function deleteSession(sessionId: string): Promise<void> {
 
 export async function listSessions(limit = 50): Promise<WorkoutSession[]> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   return db.getAllAsync<WorkoutSession>(
-    'SELECT * FROM sessions WHERE finishedAt IS NOT NULL ORDER BY startedAt DESC LIMIT ?',
-    [limit]
+    'SELECT * FROM sessions WHERE finishedAt IS NOT NULL AND studentId = ? ORDER BY startedAt DESC LIMIT ?',
+    [studentId, limit]
   );
 }
 
@@ -214,14 +265,15 @@ export async function getLastTimeForExercise(
   excludeSessionId?: string
 ): Promise<{ date: string; sets: SetEntry[] } | null> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const lastSession = await db.getFirstAsync<{ sessionId: string; startedAt: string }>(
     `SELECT s.sessionId as sessionId, sess.startedAt as startedAt
      FROM sets s
      JOIN sessions sess ON sess.id = s.sessionId
-     WHERE s.exerciseId = ? AND s.sessionId != ?
+     WHERE s.exerciseId = ? AND s.sessionId != ? AND sess.studentId = ?
      ORDER BY sess.startedAt DESC
      LIMIT 1`,
-    [exerciseId, excludeSessionId ?? '']
+    [exerciseId, excludeSessionId ?? '', studentId]
   );
   if (!lastSession) return null;
   const sets = await db.getAllAsync<SetEntry>(
@@ -237,21 +289,24 @@ export async function getLastTimeForExercise(
 
 export async function addBodyWeight(weightKg: number, date?: string): Promise<BodyWeightEntry> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const id = uuidv4();
   const d = date ?? new Date().toISOString();
-  await db.runAsync('INSERT INTO body_weight (id, date, weightKg) VALUES (?, ?, ?)', [
+  await db.runAsync('INSERT INTO body_weight (id, date, weightKg, studentId) VALUES (?, ?, ?, ?)', [
     id,
     d,
     weightKg,
+    studentId,
   ]);
   return { id, date: d, weightKg };
 }
 
 export async function listBodyWeights(limit = 200): Promise<BodyWeightEntry[]> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   return db.getAllAsync<BodyWeightEntry>(
-    'SELECT * FROM body_weight ORDER BY date DESC LIMIT ?',
-    [limit]
+    'SELECT * FROM body_weight WHERE studentId = ? ORDER BY date DESC LIMIT ?',
+    [studentId, limit]
   );
 }
 
@@ -266,11 +321,12 @@ export async function addBodyMeasurement(
   date?: string
 ): Promise<BodyMeasurementEntry> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const id = uuidv4();
   const d = date ?? new Date().toISOString();
   await db.runAsync(
-    'INSERT INTO body_measurements (id, date, type, valueCm) VALUES (?, ?, ?, ?)',
-    [id, d, type, valueCm]
+    'INSERT INTO body_measurements (id, date, type, valueCm, studentId) VALUES (?, ?, ?, ?, ?)',
+    [id, d, type, valueCm, studentId]
   );
   return { id, date: d, type, valueCm };
 }
@@ -280,15 +336,16 @@ export async function listBodyMeasurements(
   limit = 200
 ): Promise<BodyMeasurementEntry[]> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   if (type) {
     return db.getAllAsync<BodyMeasurementEntry>(
-      'SELECT * FROM body_measurements WHERE type = ? ORDER BY date DESC LIMIT ?',
-      [type, limit]
+      'SELECT * FROM body_measurements WHERE type = ? AND studentId = ? ORDER BY date DESC LIMIT ?',
+      [type, studentId, limit]
     );
   }
   return db.getAllAsync<BodyMeasurementEntry>(
-    'SELECT * FROM body_measurements ORDER BY date DESC LIMIT ?',
-    [limit]
+    'SELECT * FROM body_measurements WHERE studentId = ? ORDER BY date DESC LIMIT ?',
+    [studentId, limit]
   );
 }
 
@@ -303,22 +360,26 @@ export async function deleteBodyMeasurement(id: string): Promise<void> {
 
 export async function listMeasurementTypes(): Promise<MeasurementTypeDef[]> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   return db.getAllAsync<MeasurementTypeDef>(
-    'SELECT * FROM measurement_types ORDER BY orderIndex ASC'
+    'SELECT * FROM measurement_types WHERE studentId = ? ORDER BY orderIndex ASC',
+    [studentId]
   );
 }
 
 export async function addMeasurementType(name: string): Promise<MeasurementTypeDef> {
   const db = await getDb();
+  const studentId = await getActiveStudentId();
   const trimmed = name.trim();
   const maxRow = await db.getFirstAsync<{ maxOrder: number }>(
-    'SELECT MAX(orderIndex) as maxOrder FROM measurement_types'
+    'SELECT MAX(orderIndex) as maxOrder FROM measurement_types WHERE studentId = ?',
+    [studentId]
   );
   const orderIndex = (maxRow?.maxOrder ?? -1) + 1;
   const id = uuidv4();
   await db.runAsync(
-    'INSERT INTO measurement_types (id, name, orderIndex) VALUES (?, ?, ?)',
-    [id, trimmed, orderIndex]
+    'INSERT INTO measurement_types (id, name, orderIndex, studentId) VALUES (?, ?, ?, ?)',
+    [id, trimmed, orderIndex, studentId]
   );
   return { id, name: trimmed, orderIndex };
 }

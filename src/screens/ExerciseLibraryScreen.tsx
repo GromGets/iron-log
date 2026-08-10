@@ -1,14 +1,17 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Screen, Button, Eyebrow, Pill } from '@/components/UI';
 import { colors, space, type, radius } from '@/theme/theme';
 import { listExercises, createCustomExercise } from '@/db/repository';
 import { Exercise, MuscleGroup } from '@/types';
-import { RootStackParamList } from '@/navigation/RootNavigator';
+import { RootStackParamList, TabParamList } from '@/navigation/RootNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+type TabNav = BottomTabNavigationProp<TabParamList, 'Exercises'>;
+type Route_ = RouteProp<TabParamList, 'Exercises'>;
 
 const MUSCLE_GROUPS: MuscleGroup[] = [
   'Chest',
@@ -25,6 +28,8 @@ const MUSCLE_GROUPS: MuscleGroup[] = [
 
 export default function ExerciseLibraryScreen() {
   const navigation = useNavigation<Nav>();
+  const tabNavigation = useNavigation<TabNav>();
+  const route = useRoute<Route_>();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState('');
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -38,7 +43,11 @@ export default function ExerciseLibraryScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load])
+      if (route.params?.openAdd) {
+        setAddModalVisible(true);
+        tabNavigation.setParams({ openAdd: undefined });
+      }
+    }, [load, route.params?.openAdd, tabNavigation])
   );
 
   const filtered = exercises.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()));

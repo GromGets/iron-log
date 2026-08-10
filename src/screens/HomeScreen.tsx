@@ -9,11 +9,13 @@ import { listSessions } from '@/db/repository';
 import { WorkoutSession } from '@/types';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { LineChart } from '@/components/LineChart';
+import { useActiveStudent } from '@/context/StudentContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
+  const { activeStudentId } = useActiveStudent();
   const [streak, setStreak] = useState<StreakInfo | null>(null);
   const [weekly, setWeekly] = useState<WeeklyVolume[]>([]);
   const [recent, setRecent] = useState<WorkoutSession[]>([]);
@@ -24,7 +26,7 @@ export default function HomeScreen() {
     setStreak(s);
     setWeekly(w);
     setRecent(r);
-  }, []);
+  }, [activeStudentId]);
 
   useFocusEffect(
     useCallback(() => {
