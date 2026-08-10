@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen, Card, Eyebrow, StatBlock, EmptyState } from '@/components/UI';
@@ -9,6 +9,7 @@ import { getExerciseHistory, getPersonalRecords, ExercisePoint, PersonalRecords,
 import { deleteSet } from '@/db/repository';
 import { LineChart } from '@/components/LineChart';
 import { formatSetLine } from '@/utils/format';
+import { confirmAction } from '@/utils/alert';
 
 type Route_ = RouteProp<RootStackParamList, 'ExerciseStats'>;
 
@@ -43,18 +44,11 @@ export default function ExerciseStatsScreen() {
   );
 
   const handleDeleteSet = (set: ExerciseSetSummary) => {
-    Alert.alert('Delete set', `Remove ${formatSetLine(set)} for good?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteSet(set.id);
-          setSelectedIndex(null);
-          load();
-        },
-      },
-    ]);
+    confirmAction('Delete set', `Remove ${formatSetLine(set)} for good?`, async () => {
+      await deleteSet(set.id);
+      setSelectedIndex(null);
+      load();
+    });
   };
 
   if (history.length === 0) {

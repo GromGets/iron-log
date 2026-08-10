@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -8,6 +8,7 @@ import { colors, space, type, radius } from '@/theme/theme';
 import { listExercises, createCustomExercise, deleteExercise } from '@/db/repository';
 import { Exercise, MuscleGroup } from '@/types';
 import { RootStackParamList, TabParamList } from '@/navigation/RootNavigator';
+import { confirmAction } from '@/utils/alert';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type TabNav = BottomTabNavigationProp<TabParamList, 'Exercises'>;
@@ -66,20 +67,13 @@ export default function ExerciseLibraryScreen() {
   };
 
   const handleDelete = (ex: Exercise) => {
-    Alert.alert(
+    confirmAction(
       'Delete exercise',
       `Remove "${ex.name}" from your library? This won't delete sets or routines that already reference it.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteExercise(ex.id);
-            setExercises((prev) => prev.filter((e) => e.id !== ex.id));
-          },
-        },
-      ]
+      async () => {
+        await deleteExercise(ex.id);
+        setExercises((prev) => prev.filter((e) => e.id !== ex.id));
+      }
     );
   };
 

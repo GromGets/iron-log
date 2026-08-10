@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Modal, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
 import { colors, space, type, radius } from '@/theme/theme';
 import { useActiveStudent } from '@/context/StudentContext';
 import { AddStudentModal } from './AddStudentModal';
+import { confirmAction } from '@/utils/alert';
 
 // Only rendered (by the header) when there's something to switch between —
 // a single-student user never sees this at all.
@@ -14,20 +15,13 @@ export function StudentSwitcherButton() {
   if (students.length <= 1) return null;
 
   const handleDelete = (id: string, name: string) => {
-    Alert.alert(
+    confirmAction(
       'Delete person',
       `Remove ${name} and all of their routines, workout history, and body tracking? This can't be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteStudent(id);
-            if (students.length - 1 <= 1) setVisible(false);
-          },
-        },
-      ]
+      async () => {
+        await deleteStudent(id);
+        if (students.length - 1 <= 1) setVisible(false);
+      }
     );
   };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +14,7 @@ import {
 } from '@/db/repository';
 import { Exercise } from '@/types';
 import { ExerciseLogCard } from '@/components/ExerciseLogCard';
+import { confirmAction } from '@/utils/alert';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route_ = RouteProp<RootStackParamList, 'WorkoutSession'>;
@@ -60,16 +61,15 @@ export default function WorkoutSessionScreen() {
   };
 
   const handleFinish = () => {
-    Alert.alert('Finish workout', 'Save and end this session?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Finish',
-        onPress: async () => {
-          if (sessionId) await finishSession(sessionId);
-          navigation.goBack();
-        },
+    confirmAction(
+      'Finish workout',
+      'Save and end this session?',
+      async () => {
+        if (sessionId) await finishSession(sessionId);
+        navigation.goBack();
       },
-    ]);
+      { confirmLabel: 'Finish', destructive: false }
+    );
   };
 
   const filtered = allExercises.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()));

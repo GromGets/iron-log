@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Modal, TextInput } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen, Card, Button, EmptyState, Title } from '@/components/UI';
@@ -8,6 +8,7 @@ import { listRoutines, createRoutine, deleteRoutine, getRoutineExercises } from 
 import { Routine } from '@/types';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { useActiveStudent } from '@/context/StudentContext';
+import { confirmAction } from '@/utils/alert';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -48,17 +49,10 @@ export default function RoutinesScreen() {
   };
 
   const handleDelete = (r: Routine) => {
-    Alert.alert('Delete routine', `Delete "${r.name}"? This won't delete your logged workout history.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteRoutine(r.id);
-          load();
-        },
-      },
-    ]);
+    confirmAction('Delete routine', `Delete "${r.name}"? This won't delete your logged workout history.`, async () => {
+      await deleteRoutine(r.id);
+      load();
+    });
   };
 
   return (

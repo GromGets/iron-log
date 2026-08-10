@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Screen, Card, Eyebrow, Button, EmptyState } from '@/components/UI';
@@ -19,6 +19,7 @@ import { BodyWeightEntry, BodyMeasurementEntry, MeasurementTypeDef } from '@/typ
 import { LineChart } from '@/components/LineChart';
 import { useActiveStudent } from '@/context/StudentContext';
 import { TabParamList } from '@/navigation/RootNavigator';
+import { confirmAction, notify } from '@/utils/alert';
 
 type TabNav = BottomTabNavigationProp<TabParamList, 'Body'>;
 type Route_ = RouteProp<TabParamList, 'Body'>;
@@ -88,7 +89,7 @@ export default function BodyTrackingScreen() {
     const name = newTypeName.trim();
     if (!name) return;
     if (types.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
-      Alert.alert('Already exists', `"${name}" is already a category.`);
+      notify('Already exists', `"${name}" is already a category.`);
       return;
     }
     const created = await addMeasurementType(name);
@@ -99,24 +100,17 @@ export default function BodyTrackingScreen() {
   };
 
   const handleDeleteType = (t: MeasurementTypeDef) => {
-    Alert.alert(
+    confirmAction(
       'Delete category',
       `Remove "${t.name}" from your measurement categories? Past entries logged under it won't be deleted.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteMeasurementType(t.id);
-            setTypes((prev) => {
-              const remaining = prev.filter((x) => x.id !== t.id);
-              if (measurementType === t.name) setMeasurementType(remaining[0]?.name ?? '');
-              return remaining;
-            });
-          },
-        },
-      ]
+      async () => {
+        await deleteMeasurementType(t.id);
+        setTypes((prev) => {
+          const remaining = prev.filter((x) => x.id !== t.id);
+          if (measurementType === t.name) setMeasurementType(remaining[0]?.name ?? '');
+          return remaining;
+        });
+      }
     );
   };
 
@@ -139,31 +133,21 @@ export default function BodyTrackingScreen() {
   };
 
   const handleDeleteWeight = (entry: BodyWeightEntry) => {
-    Alert.alert('Delete entry', `Remove the ${entry.weightKg}kg entry from ${formatDate(entry.date)}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteBodyWeight(entry.id);
-          setWeights((prev) => prev.filter((w) => w.id !== entry.id));
-        },
-      },
-    ]);
+    confirmAction('Delete entry', `Remove the ${entry.weightKg}kg entry from ${formatDate(entry.date)}?`, async () => {
+      await deleteBodyWeight(entry.id);
+      setWeights((prev) => prev.filter((w) => w.id !== entry.id));
+    });
   };
 
   const handleDeleteMeasurement = (entry: BodyMeasurementEntry) => {
-    Alert.alert('Delete entry', `Remove the ${entry.valueCm}cm entry from ${formatDate(entry.date)}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteBodyMeasurement(entry.id);
-          setMeasurements((prev) => prev.filter((m) => m.id !== entry.id));
-        },
-      },
-    ]);
+    confirmAction(
+      'Delete entry',
+      `Remove the ${entry.valueCm}cm entry from ${formatDate(entry.date)}?`,
+      async () => {
+        await deleteBodyMeasurement(entry.id);
+        setMeasurements((prev) => prev.filter((m) => m.id !== entry.id));
+      }
+    );
   };
 
   const weightChartData = [...weights].reverse().map((w, i) => ({ x: i, y: w.weightKg }));

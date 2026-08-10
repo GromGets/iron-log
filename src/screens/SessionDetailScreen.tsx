@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { getSessionSets, deleteSession, deleteSet, listExercises } from '@/db/re
 import { SetEntry, Exercise } from '@/types';
 import { RootStackParamList } from '@/navigation/RootNavigator';
 import { formatSetLine } from '@/utils/format';
+import { confirmAction } from '@/utils/alert';
 
 type Route_ = RouteProp<RootStackParamList, 'SessionDetail'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -40,31 +41,17 @@ export default function SessionDetailScreen() {
   }
 
   const handleDelete = () => {
-    Alert.alert('Delete session', 'This will permanently remove this workout and its logged sets.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteSession(sessionId);
-          navigation.goBack();
-        },
-      },
-    ]);
+    confirmAction('Delete session', 'This will permanently remove this workout and its logged sets.', async () => {
+      await deleteSession(sessionId);
+      navigation.goBack();
+    });
   };
 
   const handleDeleteSet = (set: SetEntry) => {
-    Alert.alert('Delete set', `Remove ${formatSetLine(set)} for good?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteSet(set.id);
-          setSets((prev) => prev.filter((s) => s.id !== set.id));
-        },
-      },
-    ]);
+    confirmAction('Delete set', `Remove ${formatSetLine(set)} for good?`, async () => {
+      await deleteSet(set.id);
+      setSets((prev) => prev.filter((s) => s.id !== set.id));
+    });
   };
 
   return (
