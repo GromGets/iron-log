@@ -30,6 +30,9 @@
         "projectId": "7f417772-7233-4a6e-9ae7-bff9cbdf81ef"
       }
     },
-    "owner": "gromgets"
+    "owner": "gromgets",
+    "experiments": {
+      "baseUrl": "/iron-log"
+    }
   }
 }
