@@ -11,8 +11,13 @@ all data lives in a local SQLite database on your device, no account needed.
 - **"Last time"** — see exactly what you did last session for each exercise while you're logging
 - **Stats per exercise** — max weight, max reps, estimated 1RM, best session volume, and progress charts
 - **Overall stats** — workout streak, weekly volume, session history
-- **Body tracking** — body weight and measurements (waist, arms, chest, etc.) over time
+- **Body tracking** — body weight and fully custom measurement categories over time
 - **Custom exercises** — add your own on top of ~40 built-in common exercises
+- **Multiple people** — optional support for training more than one person; a switcher appears
+  automatically once you add a second person, and everything (routines, history, body tracking)
+  is kept separate per person
+- **Quick-add (+)** — a floating shortcut into adding a person, exercise, set, or measurement
+  without hunting through tabs
 
 ## Requirements
 
@@ -75,3 +80,11 @@ src/
   feature — probably a settings screen with a unit toggle that converts on display.
 - "Last time" pulls your most recent **finished** session that included that exercise, regardless
   of which routine it was part of.
+
+## License
+
+Iron Log is free and open source under **[CC BY-NC-SA 4.0](LICENSE)** — you're welcome to use,
+study, and modify it, but not to sell it or any modified version of it, and any published fork
+must credit Agustín Diano as the original author and stay under the same license. See
+[LICENSE](LICENSE) for the full terms, or check the in-app license screen (tap the © button on
+the Home tab).
