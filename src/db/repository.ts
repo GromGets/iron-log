@@ -38,7 +38,7 @@ export async function addStudent(name: string): Promise<Student> {
     trimmed,
     createdAt,
   ]);
-  await seedMeasurementTypesForStudent(db, id);
+  await seedMeasurementTypesForStudent(db as any, id);
   return { id, name: trimmed, createdAt };
 }
 
