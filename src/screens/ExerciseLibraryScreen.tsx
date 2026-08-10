@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Pressable, Modal, Alert } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Screen, Button, Eyebrow, Pill } from '@/components/UI';
 import { colors, space, type, radius } from '@/theme/theme';
-import { listExercises, createCustomExercise } from '@/db/repository';
+import { listExercises, createCustomExercise, deleteExercise } from '@/db/repository';
 import { Exercise, MuscleGroup } from '@/types';
 import { RootStackParamList, TabParamList } from '@/navigation/RootNavigator';
 
@@ -65,6 +65,24 @@ export default function ExerciseLibraryScreen() {
     load();
   };
 
+  const handleDelete = (ex: Exercise) => {
+    Alert.alert(
+      'Delete exercise',
+      `Remove "${ex.name}" from your library? This won't delete sets or routines that already reference it.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteExercise(ex.id);
+            setExercises((prev) => prev.filter((e) => e.id !== ex.id));
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <Screen>
       <View style={{ padding: space.lg, paddingBottom: 0 }}>
@@ -86,14 +104,18 @@ export default function ExerciseLibraryScreen() {
             <Eyebrow>{group}</Eyebrow>
             <View style={{ marginTop: space.sm, gap: space.xs }}>
               {items.map((ex) => (
-                <Pressable
-                  key={ex.id}
-                  style={styles.row}
-                  onPress={() => navigation.navigate('ExerciseStats', { exerciseId: ex.id, exerciseName: ex.name })}
-                >
-                  <Text style={type.body}>{ex.name}</Text>
-                  {ex.isCustom ? <Pill label="Custom" tone="accent" /> : null}
-                </Pressable>
+                <View key={ex.id} style={styles.row}>
+                  <Pressable
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    onPress={() => navigation.navigate('ExerciseStats', { exerciseId: ex.id, exerciseName: ex.name })}
+                  >
+                    <Text style={type.body}>{ex.name}</Text>
+                    {ex.isCustom ? <Pill label="Custom" tone="accent" /> : null}
+                  </Pressable>
+                  <Pressable onPress={() => handleDelete(ex)} hitSlop={8} style={{ marginLeft: space.sm }}>
+                    <Text style={{ color: colors.danger, fontSize: 15 }}>✕</Text>
+                  </Pressable>
+                </View>
               ))}
             </View>
           </View>

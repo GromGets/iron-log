@@ -42,6 +42,25 @@ export async function addStudent(name: string): Promise<Student> {
   return { id, name: trimmed, createdAt };
 }
 
+// Removing a person removes everything that only belongs to them — routines,
+// workout history, and body tracking — not just the student row itself.
+export async function deleteStudent(id: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM sets WHERE sessionId IN (SELECT id FROM sessions WHERE studentId = ?)', [
+    id,
+  ]);
+  await db.runAsync('DELETE FROM sessions WHERE studentId = ?', [id]);
+  await db.runAsync(
+    'DELETE FROM routine_exercises WHERE routineId IN (SELECT id FROM routines WHERE studentId = ?)',
+    [id]
+  );
+  await db.runAsync('DELETE FROM routines WHERE studentId = ?', [id]);
+  await db.runAsync('DELETE FROM body_weight WHERE studentId = ?', [id]);
+  await db.runAsync('DELETE FROM body_measurements WHERE studentId = ?', [id]);
+  await db.runAsync('DELETE FROM measurement_types WHERE studentId = ?', [id]);
+  await db.runAsync('DELETE FROM students WHERE id = ?', [id]);
+}
+
 export async function getActiveStudentId(): Promise<string> {
   const db = await getDb();
   const row = await db.getFirstAsync<{ value: string }>(

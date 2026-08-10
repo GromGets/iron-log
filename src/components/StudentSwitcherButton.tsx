@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Modal, StyleSheet, Alert } from 'react-native';
 import { colors, space, type, radius } from '@/theme/theme';
 import { useActiveStudent } from '@/context/StudentContext';
 import { AddStudentModal } from './AddStudentModal';
@@ -7,11 +7,29 @@ import { AddStudentModal } from './AddStudentModal';
 // Only rendered (by the header) when there's something to switch between —
 // a single-student user never sees this at all.
 export function StudentSwitcherButton() {
-  const { students, activeStudentId, activeStudent, switchStudent } = useActiveStudent();
+  const { students, activeStudentId, activeStudent, switchStudent, deleteStudent } = useActiveStudent();
   const [visible, setVisible] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
 
   if (students.length <= 1) return null;
+
+  const handleDelete = (id: string, name: string) => {
+    Alert.alert(
+      'Delete person',
+      `Remove ${name} and all of their routines, workout history, and body tracking? This can't be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteStudent(id);
+            if (students.length - 1 <= 1) setVisible(false);
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <>
@@ -27,20 +45,24 @@ export function StudentSwitcherButton() {
             <Text style={type.title}>Switch student</Text>
             <View style={{ marginTop: space.md, gap: space.xs }}>
               {students.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={async () => {
-                    await switchStudent(s.id);
-                    setVisible(false);
-                  }}
-                  style={[styles.row, s.id === activeStudentId && styles.rowActive]}
-                >
-                  <Text
-                    style={[type.body, s.id === activeStudentId && { color: colors.accent, fontWeight: '700' }]}
+                <View key={s.id} style={[styles.row, styles.studentRow, s.id === activeStudentId && styles.rowActive]}>
+                  <Pressable
+                    style={{ flex: 1 }}
+                    onPress={async () => {
+                      await switchStudent(s.id);
+                      setVisible(false);
+                    }}
                   >
-                    {s.name}
-                  </Text>
-                </Pressable>
+                    <Text
+                      style={[type.body, s.id === activeStudentId && { color: colors.accent, fontWeight: '700' }]}
+                    >
+                      {s.name}
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => handleDelete(s.id, s.name)} hitSlop={8}>
+                    <Text style={{ color: colors.danger, fontSize: 15 }}>✕</Text>
+                  </Pressable>
+                </View>
               ))}
             </View>
             <Pressable
@@ -98,6 +120,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     borderRadius: radius.sm,
     backgroundColor: colors.surfaceSunken,
+  },
+  studentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
   },
   rowActive: {
     backgroundColor: colors.accentSoft,

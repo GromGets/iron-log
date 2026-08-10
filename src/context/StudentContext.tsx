@@ -3,6 +3,7 @@ import { Student } from '@/types';
 import {
   listStudents,
   addStudent as addStudentRepo,
+  deleteStudent as deleteStudentRepo,
   getActiveStudentId,
   setActiveStudentId,
 } from '@/db/repository';
@@ -13,6 +14,7 @@ interface StudentContextValue {
   activeStudent: Student | null;
   switchStudent: (id: string) => Promise<void>;
   createStudent: (name: string) => Promise<Student>;
+  deleteStudent: (id: string) => Promise<void>;
   refreshStudents: () => Promise<void>;
 }
 
@@ -50,11 +52,34 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
     [switchStudent]
   );
 
+  // If the deleted person was the active one, fall back to whoever's left —
+  // there must always be at least one active student for the rest of the
+  // app's queries to make sense.
+  const deleteStudent = useCallback(
+    async (id: string) => {
+      await deleteStudentRepo(id);
+      const remaining = students.filter((s) => s.id !== id);
+      setStudents(remaining);
+      if (activeStudentId === id && remaining[0]) {
+        await switchStudent(remaining[0].id);
+      }
+    },
+    [students, activeStudentId, switchStudent]
+  );
+
   const activeStudent = students.find((s) => s.id === activeStudentId) ?? null;
 
   return (
     <StudentContext.Provider
-      value={{ students, activeStudentId, activeStudent, switchStudent, createStudent, refreshStudents }}
+      value={{
+        students,
+        activeStudentId,
+        activeStudent,
+        switchStudent,
+        createStudent,
+        deleteStudent,
+        refreshStudents,
+      }}
     >
       {children}
     </StudentContext.Provider>
